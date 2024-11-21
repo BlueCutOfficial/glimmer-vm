@@ -39,7 +39,7 @@ test('continue parsing after an error', () => {
   let t = '<img id="one">{{> face}}<img id="two">';
   astEqual(t, b.template([
     element('img', ['attrs', ['id', 'one']]),
-    // errorNode('error message'),
+    b.error('Handlebars partials are not supported'),
     element('img', ['attrs', ['id', 'two']])
   ]), undefined, { continueOnError: true });
 });
