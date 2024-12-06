@@ -58,5 +58,7 @@ export function astEqual(
   actual = normalizeNode(actual);
   expected = normalizeNode(expected);
 
+  debugger
+
   QUnit.assert.deepEqual(actual, expected, message);
 }

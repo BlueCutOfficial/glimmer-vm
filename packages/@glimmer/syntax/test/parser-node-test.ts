@@ -131,6 +131,14 @@ test('attributes are not allowed as values', (assert) => {
   );
 });
 
+test('Continue on error - attributes are not allowed as values', () => {
+  let t = '{{...attributes}}';
+  astEqual(t, b.template([
+    b.error('Illegal use of ...attributes'),
+    b.mustache('attributes'),
+  ]), undefined, { continueOnError: true });
+});
+
 test('attributes are not allowed as modifiers', (assert) => {
   let t = '<div {{...attributes}}></div>';
   assert.throws(
@@ -141,6 +149,14 @@ test('attributes are not allowed as modifiers', (assert) => {
   );
 });
 
+test('Continue on error - attributes are not allowed as modifiers', () => {
+  let t = '<div {{...attributes}}></div>';
+  astEqual(t, b.template([
+    b.error('Illegal use of ...attributes'),
+    element('div', ['modifiers', 'attributes']),
+  ]), undefined, { continueOnError: true });
+});
+
 test('attributes are not allowed as attribute values', (assert) => {
   let t = '<div class={{...attributes}}></div>';
   assert.throws(
@@ -149,6 +165,14 @@ test('attributes are not allowed as attribute values', (assert) => {
     },
     syntaxErrorFor('Illegal use of ...attributes', '{{...attributes}}', 'test-module', 1, 11)
   );
+});
+
+test('Continue on error - attributes are not allowed as attribute values', () => {
+  let t = '<div class={{...attributes}}></div>';
+  astEqual(t, b.template([
+    b.error('Illegal use of ...attributes'),
+    element('div', ['attrs', ['class', b.mustache('attributes')]]),
+  ]), undefined, { continueOnError: true });
 });
 
 test('Handlebars embedded in an attribute (quoted)', () => {
@@ -865,6 +889,26 @@ test('a Handlebars comment in invalid element space', (assert) => {
       5
     )
   );
+});
+
+test('Continue on error - a Handlebars comment in invalid element space', () => {
+  let t = '\nbefore <div \n  a{{! some comment }} data-foo="bar"></div> after';
+  astEqual(t, b.template([
+    b.error('Using a Handlebars comment when in the `attributeName` state is not supported'),
+    element('div', ['attrs', ['a', b.text('')], ['data-foo', 'bar']]),
+  ]), undefined, { continueOnError: true });
+
+  t = '\nbefore <div \n  a={{! some comment }} data-foo="bar"></div> after';
+  astEqual(t, b.template([
+    b.error('Using a Handlebars comment when in the `beforeAttributeValue` state is not supported'),
+    element('div',  ['attrs', ['a', b.text('data-foo="bar"')]]),
+  ]), undefined, { continueOnError: true });
+
+  t = '\nbefore <div \n  a="{{! some comment }}" data-foo="bar"></div> after';
+  astEqual(t, b.template([
+    b.error('Using a Handlebars comment when in the `attributeValueDoubleQuoted` state is not supported'),
+    element('div',  ['attrs', ['a', b.text('')], ['data-foo', 'bar']]),
+  ]), undefined, { continueOnError: true });
 });
 
 test('allow {{null}} to be passed as helper name', () => {

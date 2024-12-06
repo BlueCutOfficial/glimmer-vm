@@ -231,7 +231,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     const { escaped, loc, strip } = rawMustache;
 
     if ('original' in rawMustache.path && rawMustache.path.original === '...attributes') {
-      throw generateSyntaxError(
+      this.triggerError(
         'Illegal use of ...attributes',
         this.source.spanFor(rawMustache.loc)
       );
@@ -355,7 +355,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
         break;
 
       default:
-        throw generateSyntaxError(
+        this.triggerError(
           `Using a Handlebars comment when in the \`${tokenizer['state']}\` state is not supported`,
           this.source.spanFor(rawComment.loc)
         );
