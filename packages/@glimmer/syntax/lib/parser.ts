@@ -21,7 +21,7 @@ export interface StartTag {
   nameStart: Nullable<src.SourceOffset>;
   nameEnd: Nullable<src.SourceOffset>;
   readonly attributes: ASTv1.AttrNode[];
-  readonly modifiers: ASTv1.ElementModifierStatement[];
+  readonly modifiers: (ASTv1.ElementModifierStatement | ASTv1.ErrorNode)[];
   readonly comments: ASTv1.MustacheCommentStatement[];
   readonly params: ASTv1.VarHead[];
   selfClosing: boolean;

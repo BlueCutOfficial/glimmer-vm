@@ -181,7 +181,7 @@ class Builders {
     path: ASTv1.PathExpression;
     selfClosing: boolean;
     attributes: ASTv1.AttrNode[];
-    modifiers: ASTv1.ElementModifierStatement[];
+    modifiers: (ASTv1.ElementModifierStatement | ASTv1.ErrorNode)[];
     params: ASTv1.VarHead[];
     children: ASTv1.Statement[];
     comments: ASTv1.MustacheCommentStatement[];

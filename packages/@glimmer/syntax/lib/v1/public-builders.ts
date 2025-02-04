@@ -178,7 +178,7 @@ export type SexpValue =
 
 export interface BuildElementOptions {
   attrs?: ASTv1.AttrNode[];
-  modifiers?: ASTv1.ElementModifierStatement[];
+  modifiers?: (ASTv1.ElementModifierStatement | ASTv1.ErrorNode)[];
   children?: ASTv1.Statement[];
   comments?: ASTv1.MustacheCommentStatement[];
   blockParams?: ASTv1.VarHead[] | string[];

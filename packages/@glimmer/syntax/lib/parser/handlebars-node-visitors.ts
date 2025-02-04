@@ -107,9 +107,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
 
   triggerError(message: string, loc: SourceSpan): ASTv1.ErrorNode {
     if(this.continueOnError) {
-      let error = b.error({ loc,  message });
-      appendChild(this.currentElement(), error);
-      return error;
+      return b.error({ loc,  message });
     }
     throw generateSyntaxError(message, loc);
   }
@@ -217,7 +215,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     appendChild(parentProgram, node);
   }
 
-  MustacheStatement(rawMustache: HBS.MustacheStatement): ASTv1.MustacheStatement | void {
+  MustacheStatement(rawMustache: HBS.MustacheStatement): ASTv1.MustacheStatement | ASTv1.ErrorNode | void {
     this.pendingError?.mustache(this.source.spanFor(rawMustache.loc));
 
     const { tokenizer } = this;
@@ -227,17 +225,15 @@ export abstract class HandlebarsNodeVisitors extends Parser {
       return;
     }
 
-    let mustache: ASTv1.MustacheStatement;
+    let mustache: ASTv1.MustacheStatement | ASTv1.ErrorNode;
     const { escaped, loc, strip } = rawMustache;
 
     if ('original' in rawMustache.path && rawMustache.path.original === '...attributes') {
-      this.triggerError(
+      mustache = this.triggerError(
         'Illegal use of ...attributes',
         this.source.spanFor(rawMustache.loc)
       );
-    }
-
-    if (isHBSLiteral(rawMustache.path)) {
+    } else if (isHBSLiteral(rawMustache.path)) {
       mustache = b.mustache({
         path: this.acceptNode<(typeof rawMustache.path)['type']>(rawMustache.path),
         params: [],
@@ -287,13 +283,15 @@ export abstract class HandlebarsNodeVisitors extends Parser {
       // Attribute values
       case 'beforeAttributeValue':
         this.beginAttributeValue(false);
-        this.appendDynamicAttributeValuePart(mustache);
+        if (mustache.type === 'MustacheStatement')
+          this.appendDynamicAttributeValuePart(mustache);
         tokenizer.transitionTo(ATTRIBUTE_VALUE_UNQUOTED);
         break;
       case 'attributeValueDoubleQuoted':
       case 'attributeValueSingleQuoted':
       case 'attributeValueUnquoted':
-        this.appendDynamicAttributeValuePart(mustache);
+        if (mustache.type === 'MustacheStatement')
+          this.appendDynamicAttributeValuePart(mustache);
         break;
 
       // TODO: Only append child when the tokenizer state makes
@@ -367,25 +365,33 @@ export abstract class HandlebarsNodeVisitors extends Parser {
   PartialStatement(partial: HBS.PartialStatement): ASTv1.ErrorNode {
     const loc = this.source.spanFor(partial.loc);
     const message = `Handlebars partials are not supported`;
-    return this.triggerError(message, loc);
+    const errorNode = this.triggerError(message, loc);
+    appendChild(this.currentElement(), errorNode);
+    return errorNode;
   }
 
   PartialBlockStatement(partialBlock: HBS.PartialBlockStatement): ASTv1.ErrorNode {
     const loc = this.source.spanFor(partialBlock.loc);
     const message = `Handlebars partial blocks are not supported`;
-    return this.triggerError(message, loc);
+    const errorNode = this.triggerError(message, loc);
+    appendChild(this.currentElement(), errorNode);
+    return errorNode;
   }
 
   Decorator(decorator: HBS.Decorator): ASTv1.ErrorNode {
     const loc = this.source.spanFor(decorator.loc);
     const message = `Handlebars decorators are not supported`;
-    return this.triggerError(message, loc);
+    const errorNode = this.triggerError(message, loc);
+    appendChild(this.currentElement(), errorNode);
+    return errorNode;
   }
 
   DecoratorBlock(decoratorBlock: HBS.DecoratorBlock): ASTv1.ErrorNode {
     const loc = this.source.spanFor(decoratorBlock.loc);
     const message = `Handlebars decorator blocks are not supported`;
-    return this.triggerError(message, loc);
+    const errorNode = this.triggerError(message, loc);
+    appendChild(this.currentElement(), errorNode);
+    return errorNode;
   }
 
   SubExpression(sexpr: HBS.SubExpression): ASTv1.SubExpression {
@@ -664,8 +670,13 @@ function acceptCallNodes(
 
 function addElementModifier(
   element: ParserNodeBuilder<StartTag>,
-  mustache: ASTv1.MustacheStatement
+  mustache: ASTv1.MustacheStatement | ASTv1.ErrorNode
 ) {
+  if (mustache.type === 'ErrorNode') {
+    element.modifiers.push(mustache);
+    return;
+  }
+
   const { path, params, hash, loc } = mustache;
 
   if (isHBSLiteral(path)) {

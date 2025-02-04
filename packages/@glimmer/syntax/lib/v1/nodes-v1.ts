@@ -104,7 +104,7 @@ export interface ElementNode extends BaseNode {
   selfClosing: boolean;
   attributes: AttrNode[];
   params: VarHead[];
-  modifiers: ElementModifierStatement[];
+  modifiers: (ElementModifierStatement | ErrorNode)[];
   comments: MustacheCommentStatement[];
   children: Statement[];
 
